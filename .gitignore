@@ -4,6 +4,8 @@
 .vscode/
 DS_Store
 
+todos/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
