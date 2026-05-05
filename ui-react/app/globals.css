@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #ffffff;
+}
+
+.ag2-chat.copilotKitChat {
+  background: #ffffff;
+}
+
+.ag2-chat .copilotKitMessages {
+  gap: 1.5rem;
+  padding-top: 2rem;
+}
+
+.ag2-chat [data-testid="copilot-scroll-content"] {
+  min-height: 100%;
+}
+
+.ag2-chat .copilotKitMessage {
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.ag2-chat .copilotKitMessage.copilotKitAssistantMessage {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  color: #18181b;
+}
+
+.ag2-chat .copilotKitMessage.copilotKitAssistantMessage::before {
+  content: "";
+  grid-row: 1 / span 2;
+  width: 32px;
+  height: 32px;
+  margin-top: 2px;
+  background-image: url("/Robot-MS-Blue.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 8px 14px rgb(14 165 233 / 18%));
+}
+
+.ag2-chat .copilotKitAssistantMessage > div:first-child {
+  grid-column: 2;
+  max-width: 44rem;
+}
+
+.ag2-chat [data-testid="copilot-assistant-toolbar"] {
+  grid-column: 2;
+  margin-top: 0.25rem;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.ag2-chat .copilotKitAssistantMessage:hover [data-testid="copilot-assistant-toolbar"] {
+  opacity: 1;
+}
+
+.ag2-chat .copilotKitAssistantMessage p:first-child,
+.ag2-chat .copilotKitUserMessage p:first-child {
+  margin-top: 0;
+}
+
+.ag2-chat .copilotKitAssistantMessage p:last-child,
+.ag2-chat .copilotKitUserMessage p:last-child {
+  margin-bottom: 0;
+}
+
+.ag2-chat .copilotKitAssistantMessage ul,
+.ag2-chat .copilotKitAssistantMessage ol {
+  margin: 0.85rem 0;
+  padding-left: 1.25rem;
+}
+
+.ag2-chat .copilotKitAssistantMessage li {
+  margin: 0.35rem 0;
+  padding-left: 0.15rem;
+}
+
+.ag2-chat .copilotKitUserMessage {
+  padding-top: 0;
+}
+
+.ag2-chat .copilotKitUserMessage > div[class*="prose"] {
+  max-width: min(80%, 42rem);
+  border-radius: 1.5rem;
+  background: #ffffff;
+  border: 1px solid rgb(228 228 231 / 80%);
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 4%),
+    0 10px 30px rgb(24 24 27 / 6%);
+  color: #18181b;
+  padding: 0.75rem 1rem;
+}
+
+.ag2-chat [data-testid="copilot-input-overlay"] {
+  padding-bottom: 1rem;
+  background: linear-gradient(to top, #ffffff 68%, rgb(255 255 255 / 0));
+}
+
+.ag2-chat .copilotKitInput {
+  border: 1px solid rgb(212 212 216 / 90%);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 4%),
+    0 12px 36px rgb(24 24 27 / 10%);
+}
+
+.ag2-chat .copilotKitInput:focus-within {
+  border-color: rgb(161 161 170);
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 5%),
+    0 16px 44px rgb(24 24 27 / 12%);
+}
+
+.ag2-chat textarea[data-testid="copilot-chat-textarea"] {
+  color: #18181b;
+}
+
+.ag2-chat textarea[data-testid="copilot-chat-textarea"]::placeholder {
+  color: #71717a;
+}
+
+.ag2-chat .copilotKitInput + div,
+.ag2-chat [class*="text-muted-foreground"] {
+  color: #71717a;
+}
+
+@media (max-width: 640px) {
+  .ag2-chat .copilotKitMessages {
+    padding-top: 1.25rem;
+  }
+
+  .ag2-chat .copilotKitAssistantMessage {
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+
+  .ag2-chat .copilotKitMessage.copilotKitAssistantMessage::before {
+    width: 28px;
+    height: 28px;
+  }
+
+  .ag2-chat .copilotKitUserMessage > div[class*="prose"] {
+    max-width: 88%;
+  }
+
+  .ag2-chat [data-testid="copilot-input-overlay"] {
+    padding-bottom: 0.75rem;
+  }
+}
