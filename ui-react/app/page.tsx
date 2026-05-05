@@ -4,11 +4,15 @@ import {
     CopilotChat,
     CopilotChatAssistantMessage,
     type CopilotChatAssistantMessageProps,
+    useAgent,
+    useAgentContext,
     useRenderTool,
 } from "@copilotkit/react-core/v2";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 export default function Home() {
+    useUserIdVariable();
     useTodoToolRenderers();
 
     return (
@@ -59,6 +63,48 @@ export default function Home() {
     );
 }
 
+
+function useUserIdVariable() {
+    const { agent } = useAgent({ agentId: "agent" });
+    const userId = usePersistentUserId();
+
+    // Add explicit agent context so the model can reason about the active user.
+    useAgentContext({
+        description: "user_id",
+        value: userId,
+    });
+
+    // AGUIStream resolves Variable() values from run state, so keep user_id there.
+    useEffect(() => {
+        const currentState = (agent.state ?? {}) as Record<string, unknown>;
+        if (currentState.user_id === userId) {
+            return;
+        }
+        agent.setState({
+            ...currentState,
+            user_id: userId,
+        });
+    }, [agent, userId]);
+}
+
+function usePersistentUserId() {
+    const [userId, setUserId] = useState("user_local");
+
+    useEffect(() => {
+        const storageKey = "ag-ui-user-id";
+        const existing = window.localStorage.getItem(storageKey);
+        if (existing) {
+            setUserId(existing);
+            return;
+        }
+
+        const generated = `user_${globalThis.crypto.randomUUID().slice(0, 8)}`;
+        window.localStorage.setItem(storageKey, generated);
+        setUserId(generated);
+    }, []);
+
+    return userId;
+}
 
 function useTodoToolRenderers() {
     useRenderTool({
@@ -120,7 +166,7 @@ function ListTodosExecutionCard(props: {
     params: unknown;
     result: string | undefined;
 }) {
-    const todos = JSON.parse(props.result ?? "[]");
+    const todos: { time: string; title: string }[] = JSON.parse(props.result ?? "[]");
 
     return (
         <ToolExecutionCard {...props}>

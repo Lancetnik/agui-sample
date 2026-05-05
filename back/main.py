@@ -2,8 +2,9 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 import logging
+from typing import Annotated
 
-from autogen.beta import Agent, config, Toolkit, middleware
+from autogen.beta import Agent, config, Toolkit, middleware, Variable
 from autogen.beta.ag_ui import AGUIStream
 
 logging.basicConfig(level=logging.INFO)
@@ -14,8 +15,15 @@ TODO_DIR.mkdir(exist_ok=True)
 
 todo_toolkit = Toolkit()
 
+
 @dataclass
-class TodoItem:
+class TodoView:
+    time: datetime
+    title: str
+
+
+@dataclass
+class TodoItem(TodoView):
     user_id: str
     time: datetime
     title: str
@@ -45,12 +53,12 @@ class TodoItem:
 
 
 @dataclass
-class TodoDetails(TodoItem):
+class TodoDetails(TodoView):
     description: str
 
 
 @todo_toolkit.tool
-async def list_todos(user_id: str) -> list[TodoItem]:
+async def list_todos(user_id: Annotated[str, Variable()]) -> list[TodoItem]:
     """List all TODO items"""
     user_dir = TODO_DIR / user_id
     if not user_dir.exists():
@@ -62,23 +70,26 @@ async def list_todos(user_id: str) -> list[TodoItem]:
 
 
 @todo_toolkit.tool
-def read_todo(item: TodoItem) -> str:
+def read_todo(item: TodoView, user_id: Annotated[str, Variable()]) -> str:
     """Get full details of a TODO item"""
-    return f"{item.title} - {item.filename.read_text() or 'No description'}"
+    todo = TodoItem(time=item.time, title=item.title, user_id=user_id)
+    return f"{todo.title} - {todo.filename.read_text() or 'No description'}"
 
 
 @todo_toolkit.tool
-def remove_todo(item: TodoItem) -> str:
+def remove_todo(item: TodoView, user_id: Annotated[str, Variable()]) -> str:
     """Remove a TODO item from the list"""
-    item.filename.unlink()
-    return f"{item.title} removed"
+    todo = TodoItem(time=item.time, title=item.title, user_id=user_id)
+    todo.filename.unlink()
+    return f"{todo.title} removed"
 
 
 @todo_toolkit.tool
-def add_todo(item: TodoDetails) -> str:
+def add_todo(item: TodoDetails, user_id: Annotated[str, Variable()]) -> str:
     """Add a TODO item to the list"""
-    item.filename.write_text(item.description)
-    return f"{item.title} added"
+    todo = TodoItem(time=item.time, title=item.title, user_id=user_id)
+    todo.filename.write_text(item.description)
+    return f"{todo.title} added"
 
 
 agent = Agent(
