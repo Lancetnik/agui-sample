@@ -16,6 +16,7 @@ export default function Home() {
     useUserIdVariable();
     useTodoToolRenderers();
     useBrowserTools();
+    useGenUITools();
 
     return (
         <main className="min-h-screen bg-white text-zinc-900">
@@ -103,6 +104,39 @@ function useBrowserTools() {
                 title="Get user location"
                 status={props.status}
                 params={props.args}
+                result={props.result}
+            />
+        ),
+    });
+}
+
+function useGenUITools() {
+    useFrontendTool({
+        name: "render_idea_list",
+        description:
+            "Render a visual list of ideas/capabilities for the user. Use this when the user asks what they can do, asks for suggestions, or asks for example tasks.",
+        parameters: z.object({
+            title: z.string().optional(),
+            ideas: z
+                .array(
+                    z.object({
+                        title: z.string(),
+                        description: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        }),
+        handler: async (args) => {
+            return {
+                ok: true,
+                title: args.title ?? "What I can do",
+                ideas: args.ideas?.length ? args.ideas : [],
+            };
+        },
+        render: (props) => (
+            <IdeasExecutionCard
+                status={props.status}
+                args={props.args}
                 result={props.result}
             />
         ),
@@ -290,6 +324,78 @@ function ListTodosExecutionCard(props: {
                         <li>No TODO items</li>
                     )}
                 </ul>
+            )}
+        </ToolExecutionCard>
+    );
+}
+
+function IdeasExecutionCard(props: {
+    status: "inProgress" | "executing" | "complete";
+    args: unknown;
+    result: unknown;
+}) {
+    const parsed = z
+        .object({
+            title: z.string().optional(),
+            ideas: z
+                .array(
+                    z.object({
+                        title: z.string(),
+                        description: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        })
+        .safeParse(props.result);
+
+    const fallback = z
+        .object({
+            title: z.string().optional(),
+            ideas: z
+                .array(
+                    z.object({
+                        title: z.string(),
+                        description: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        })
+        .safeParse(props.args);
+
+    const title =
+        (parsed.success ? parsed.data.title : undefined) ??
+        (fallback.success ? fallback.data.title : undefined) ??
+        "What I can do";
+    const ideas =
+        (parsed.success ? parsed.data.ideas : undefined) ??
+        (fallback.success ? fallback.data.ideas : undefined) ??
+        [];
+
+    return (
+        <ToolExecutionCard
+            title="Idea list"
+            status={props.status}
+            params={props.args}
+            result={JSON.stringify(props.result)}
+        >
+            {props.status === "complete" && (
+                <div className="mt-1 rounded-lg border border-zinc-200 bg-white p-2 text-xs text-zinc-700">
+                    <div className="mb-2 text-sm font-medium text-zinc-900">{title}</div>
+                    <ul className="space-y-1.5">
+                        {ideas.length > 0 ? (
+                            ideas.map((idea, index) => (
+                                <li key={`${idea.title}-${index}`}>
+                                    <div className="font-medium text-zinc-800">{idea.title}</div>
+                                    {idea.description && (
+                                        <div className="text-zinc-600">{idea.description}</div>
+                                    )}
+                                </li>
+                            ))
+                        ) : (
+                            <li>No ideas provided</li>
+                        )}
+                    </ul>
+                </div>
             )}
         </ToolExecutionCard>
     );
