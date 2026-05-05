@@ -42,7 +42,7 @@ class TodoDetails(TodoItem):
 
 
 @todo_toolkit.tool
-def list_todos() -> list[TodoItem]:
+async def list_todos() -> list[TodoItem]:
     """List all TODO items"""
     return [TodoItem.from_filename(todo_file) for todo_file in TODO_DIR.glob("*.txt")]
 
@@ -50,21 +50,21 @@ def list_todos() -> list[TodoItem]:
 @todo_toolkit.tool
 def read_todo(item: TodoItem) -> str:
     """Get full details of a TODO item"""
-    return item.filename.read_text()
+    return f"{item.title} - {item.filename.read_text() or 'No description'}"
 
 
 @todo_toolkit.tool
 def remove_todo(item: TodoItem) -> str:
     """Remove a TODO item from the list"""
     item.filename.unlink()
-    return f"TODO: {item.title} removed"
+    return f"{item.title} removed"
 
 
 @todo_toolkit.tool
 def add_todo(item: TodoDetails) -> str:
     """Add a TODO item to the list"""
     item.filename.write_text(item.description)
-    return f"TODO: {item.title} added"
+    return f"{item.title} added"
 
 
 agent = Agent(
