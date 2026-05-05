@@ -16,6 +16,7 @@ todo_toolkit = Toolkit()
 
 @dataclass
 class TodoItem:
+    user_id: str
     time: datetime
     title: str
 
@@ -24,13 +25,20 @@ class TodoItem:
         self.title = self.title.removesuffix(".txt")
 
     @property
+    def user_todo_dir(self) -> Path:
+        user_dir = TODO_DIR / self.user_id
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+
+    @property
     def filename(self) -> Path:
-        return TODO_DIR / f"{self.time.isoformat()}__{self.title}.txt"
+        return self.user_todo_dir / f"{self.time.isoformat()}__{self.title}.txt"
 
     @classmethod
-    def from_filename(cls, filename: Path) -> "TodoItem":
+    def from_filename(cls, user_id: str, filename: Path) -> "TodoItem":
         time, name = filename.name.split("__")
         return cls(
+            user_id=user_id,
             time=datetime.fromisoformat(time),
             title=name.removesuffix(".txt"),
         )
@@ -42,9 +50,15 @@ class TodoDetails(TodoItem):
 
 
 @todo_toolkit.tool
-async def list_todos() -> list[TodoItem]:
+async def list_todos(user_id: str) -> list[TodoItem]:
     """List all TODO items"""
-    return [TodoItem.from_filename(todo_file) for todo_file in TODO_DIR.glob("*.txt")]
+    user_dir = TODO_DIR / user_id
+    if not user_dir.exists():
+        return []
+    return [
+        TodoItem.from_filename(user_id, todo_file)
+        for todo_file in user_dir.glob("*.txt")
+    ]
 
 
 @todo_toolkit.tool
