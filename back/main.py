@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import logging
 
 from autogen.beta import Agent, config, Toolkit, middleware
+from autogen.beta.ag_ui import AGUIStream
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +19,10 @@ class TodoItem:
     time: datetime
     title: str
 
+    def __post_init__(self):
+        # Just in case, remove the .txt suffix from the title
+        self.title = self.title.removesuffix(".txt")
+
     @property
     def filename(self) -> Path:
         return TODO_DIR / f"{self.time.isoformat()}__{self.title}.txt"
@@ -25,7 +30,10 @@ class TodoItem:
     @classmethod
     def from_filename(cls, filename: Path) -> "TodoItem":
         time, name = filename.name.split("__")
-        return cls(time=datetime.fromisoformat(time), title=name)
+        return cls(
+            time=datetime.fromisoformat(time),
+            title=name.removesuffix(".txt"),
+        )
 
 
 @dataclass
@@ -66,25 +74,19 @@ agent = Agent(
         "You should be able to add, remove, and update TODO items. "
         "You should be able to save the TODO list to a file and load it from a file."
     ),
-    config=config.OpenAIResponsesConfig("gpt-5-mini"),
+    config=config.OpenAIResponsesConfig("gpt-5", streaming=True),
     middleware=[middleware.LoggingMiddleware()],
     tools=[todo_toolkit],
 )
 
 
-async def main():
-    result = await agent.ask(
-        "I need to buy groceries tomorrow at 10:00 AM. 10 apples, 5 oranges, and 3 bananas."
-    )
-    print(await result.content())
-
-    result = await agent.ask(
-        "Check my TODO list and tell me what should I do tomorrow?"
-    )
-    print(await result.content())
-
+app = AGUIStream(agent)
 
 if __name__ == "__main__":
-    import asyncio
+    import uvicorn
 
-    asyncio.run(main())
+    uvicorn.run(
+        app.build_asgi(),
+        host="0.0.0.0",
+        port=8008,
+    )
