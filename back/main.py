@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import logging
 from typing import Annotated
 
-from autogen.beta import Agent, config, Toolkit, middleware, Variable
+from autogen.beta import Agent, config, middleware, Variable
+from autogen.beta.tools import Toolkit, WebSearchTool
 from autogen.beta.ag_ui import AGUIStream
 
 logging.basicConfig(level=logging.INFO)
@@ -101,7 +102,7 @@ agent = Agent(
     ),
     config=config.OpenAIResponsesConfig("gpt-5", streaming=True),
     middleware=[middleware.LoggingMiddleware()],
-    tools=[todo_toolkit],
+    tools=[todo_toolkit, WebSearchTool()],
 )
 
 

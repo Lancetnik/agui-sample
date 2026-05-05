@@ -158,6 +158,19 @@ function useTodoToolRenderers() {
             />
         ),
     });
+
+    useRenderTool({
+        name: "web_search",
+        parameters: z.any(),
+        render: (props) => (
+            <ToolExecutionCard
+                title="Web search"
+                status={props.status}
+                params={props.parameters}
+                result={props.result}
+            />
+        ),
+    });
 }
 
 function ListTodosExecutionCard(props: {
