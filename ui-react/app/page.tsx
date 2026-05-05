@@ -4,6 +4,7 @@ import {
     CopilotChat,
     CopilotChatAssistantMessage,
     type CopilotChatAssistantMessageProps,
+    useFrontendTool,
     useAgent,
     useAgentContext,
     useRenderTool,
@@ -14,6 +15,7 @@ import { z } from "zod";
 export default function Home() {
     useUserIdVariable();
     useTodoToolRenderers();
+    useBrowserTools();
 
     return (
         <main className="min-h-screen bg-white text-zinc-900">
@@ -63,6 +65,99 @@ export default function Home() {
     );
 }
 
+
+function useBrowserTools() {
+    useFrontendTool({
+        name: "get_user_location",
+        description: "Get user's current geolocation from browser API. Call it AUTOMATICALLY each time you want to know user location or local time.",
+        parameters: z.object({}),
+        handler: async () => {
+            if (!("geolocation" in navigator)) {
+                return {
+                    ok: false,
+                    error: "Geolocation is not supported in this browser.",
+                };
+            }
+
+            try {
+                const position = await getCurrentPositionWithRetry(2);
+                const { latitude, longitude, accuracy } = position.coords;
+
+                return {
+                    ok: true,
+                    latitude,
+                    longitude,
+                    accuracy_m: accuracy,
+                    local_time: new Date().toLocaleString(),
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    error: formatGeolocationError(error),
+                    local_time: new Date().toLocaleString(),
+                };
+            }
+        },
+        render: (props) => (
+            <ToolExecutionCard
+                title="Get user location"
+                status={props.status}
+                params={props.args}
+                result={props.result}
+            />
+        ),
+    });
+}
+
+function getCurrentPosition(options?: PositionOptions): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+}
+
+async function getCurrentPositionWithRetry(maxAttempts: number): Promise<GeolocationPosition> {
+    const options: PositionOptions = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+    };
+
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await getCurrentPosition(options);
+        } catch (error) {
+            lastError = error;
+            const geoError = error as GeolocationPositionError;
+
+            // Retry only for temporary unavailability (kCLErrorLocationUnknown etc.)
+            if (geoError?.code !== geoError?.POSITION_UNAVAILABLE || attempt === maxAttempts) {
+                break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+    }
+
+    throw lastError;
+}
+
+function formatGeolocationError(error: unknown): string {
+    const geoError = error as GeolocationPositionError | undefined;
+    if (!geoError || typeof geoError.code !== "number") {
+        return "Unable to get current location.";
+    }
+
+    if (geoError.code === geoError.PERMISSION_DENIED) {
+        return "Location permission denied by user/browser.";
+    }
+    if (geoError.code === geoError.POSITION_UNAVAILABLE) {
+        return "Location is currently unavailable. Please try again in a few seconds.";
+    }
+    if (geoError.code === geoError.TIMEOUT) {
+        return "Location request timed out.";
+    }
+    return geoError.message || "Unable to get current location.";
+}
 
 function useUserIdVariable() {
     const { agent } = useAgent({ agentId: "agent" });
